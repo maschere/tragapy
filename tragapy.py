@@ -23,7 +23,7 @@ def format_int(val) -> int:
 
 
 
-class traga_api:
+class tragapy:
     """static class that wraps all tradegate json API calls
     """
     last_warn = datetime.now() - timedelta(seconds=10)
@@ -34,9 +34,9 @@ class traga_api:
         tz = pytz.timezone("Europe/Berlin")
         berlin_now = datetime.now(tz)
         if berlin_now.hour < 8 or berlin_now.hour >= 22:
-            if (datetime.now() - traga_api.last_warn).total_seconds() > 10.0:
+            if (datetime.now() - tragapy.last_warn).total_seconds() > 10.0:
                 print("WARNING: Market is closed right now, returning yesterday's data")
-                traga_api.last_warn = datetime.now()
+                tragapy.last_warn = datetime.now()
         try:
             if pause > 0:
                 time.sleep(pause)
@@ -56,8 +56,10 @@ class traga_api:
         Returns:
             dict: real-time quote data
         """
-        raw_dat = traga_api.__get__("https://www.tradegate.de/refresh.php?isin=" + isin)
+        raw_dat = tragapy.__get__("https://www.tradegate.de/refresh.php?isin=" + isin)
         # fix numbers, sometimes , instead of .
+        if raw_dat["avg"] == "./.":
+            return {}
         bid_price = format_float(raw_dat["bid"])
         ask_price = format_float(raw_dat["ask"])
         last_price = format_float(raw_dat["last"])
@@ -102,7 +104,7 @@ class traga_api:
         Returns:
             Tuple[pd.DataFrame,int]: dataframe of tick data and the next tick ID to continue querying from
         """
-        raw_dat = traga_api.__get__(
+        raw_dat = tragapy.__get__(
             "https://www.tradegate.de/umsaetze.php?isin={isin:s}&id={id:g}".format(
                 isin=isin, id=from_id
             ), pause=0.05
@@ -141,7 +143,7 @@ class traga_api:
         dats = []
         nextid = 0
         while nextid != -1:
-            dat, nextid = traga_api.ticks(isin, nextid)
+            dat, nextid = tragapy.ticks(isin, nextid)
             dats.append(dat)
         return pd.concat(dats)
 
