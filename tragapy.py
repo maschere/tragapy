@@ -89,8 +89,12 @@ class tragapy:
         )
 
     @staticmethod
-    def top() -> dict:
-        return {}
+    def top() -> pd.DataFrame:
+        all_top = []
+        for i in range(1,5):
+            top_dict = tragapy.__get__("https://www.tradegate.de/json/tradegate{id:g}.json".format(id=i),0.05)
+            all_top.append(pd.DataFrame(top_dict["top5umsatz"]))
+        return pd.concat(all_top, ignore_index=True)
 
 
     @staticmethod
