@@ -1,6 +1,6 @@
 #%% imports and defs
 import json
-from typing import Tuple
+from typing import Any, Tuple
 import requests
 import pandas as pd
 import time
@@ -12,13 +12,13 @@ import pytz
 
 def format_float(val) -> float:
     if type(val) is str:
-        val = float(val.replace(",", "."))
+        val = float(val.replace(" ", "").replace(",", "."))
     return val
 
 
 def format_int(val) -> int:
     if type(val) is str:
-        val = int(val.replace(",", "."))
+        val = int(val.replace(" ", "").replace(",", "."))
     return val
 
 
@@ -106,7 +106,7 @@ class tragapy:
             from_id (int): transaction ID. starts at 0 on market open and increases until market close
 
         Returns:
-            Tuple[pd.DataFrame,int]: dataframe of tick data and the next tick ID to continue querying from
+            Tuple[pd.DataFrame,int,dict]: dataframe of tick data and the next tick ID to continue querying from
         """
         raw_dat = tragapy.__get__(
             "https://www.tradegate.de/umsaetze.php?isin={isin:s}&id={id:g}".format(
@@ -127,7 +127,7 @@ class tragapy:
             return None, -1
         dat["dt"] = pd.to_datetime(dat["date"] + " " + dat["time"])
         dat.drop(
-            ["id", "sortierung", "date", "time", "umsatz"], inplace=True, axis="columns"
+            ["id", "sortierung", "date", "time", "umsatz"], inplace=True, axis="columns", errors="ignore"
         )
         dat["isin"] = isin
         # dat.reset_index(drop=True, inplace=True)
@@ -148,6 +148,11 @@ class tragapy:
         nextid = 0
         while nextid != -1:
             dat, nextid = tragapy.ticks(isin, nextid)
-            dats.append(dat)
-        return pd.concat(dats)
+            if dat is not None:
+                dats.append(dat)
+        if len(dats) > 0:
+            dats = pd.concat(dats)
+        else:
+            dats = pd.DataFrame()
+        return dats
 
