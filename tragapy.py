@@ -31,12 +31,6 @@ class tragapy:
     @staticmethod
     def __get__(url: str, pause=0.0) -> dict:
         raw_dat = {}
-        tz = pytz.timezone("Europe/Berlin")
-        berlin_now = datetime.now(tz)
-        if berlin_now.hour < 8 or berlin_now.hour >= 22:
-            if (datetime.now() - tragapy.last_warn).total_seconds() > 10.0:
-                print("WARNING: Market is closed right now, returning yesterday's data")
-                tragapy.last_warn = datetime.now()
         try:
             if pause > 0:
                 time.sleep(pause)
@@ -56,6 +50,13 @@ class tragapy:
         Returns:
             dict: real-time quote data
         """
+        tz = pytz.timezone("Europe/Berlin")
+        berlin_now = datetime.now(tz)
+        if berlin_now.hour < 8 or berlin_now.hour >= 22:
+            if (datetime.now() - tragapy.last_warn).total_seconds() > 10.0:
+                print("WARNING: Market is closed right now, returning yesterday's data")
+                tragapy.last_warn = datetime.now()
+        
         raw_dat = tragapy.__get__("https://www.tradegate.de/refresh.php?isin=" + isin)
         # fix numbers, sometimes , instead of .
         if raw_dat["avg"] == "./.":
@@ -119,6 +120,9 @@ class tragapy:
             return None, -1
         # get next id to continue query with
         next_id = int(max(dat["id"]))
+        #if one page contains only ticks but no aggregate continue
+        if "umsatz" not in dat.columns:
+            return None, next_id
         # filter and convert
         dat["volume"] = dat["umsatz"].apply(lambda x: format_float(x))
         dat["price"] = dat["price"].apply(lambda x: format_float(x))
