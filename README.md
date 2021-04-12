@@ -34,7 +34,7 @@ from tragapy import tragapy
 t = tragapy.tick_all("US36467W1099")
 print(t)
 
-                volume	price	isin
+                        volume	price	isin
 dt			
 2021-04-12 08:02:39.089	30.0	131.50	US36467W1099
 2021-04-12 08:03:11.004	110.0	131.30	US36467W1099
